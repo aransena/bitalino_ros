@@ -37,8 +37,9 @@ if __name__=="__main__":
     cocontract_data = 0
     direction_data = 0
     rospy.on_shutdown(clean_shutdown)
-
-    for i in range(0,1000):
+    rospy.loginfo("Finding neutral direction signal")
+    max_cnt = 100
+    for i in range(0, max_cnt):
         # Read samples
         data = device.read(nSamples)
         # data = data[:]
@@ -46,10 +47,13 @@ if __name__=="__main__":
         data = data[-2:]
 
         direction = (np.std(data[0]) - np.std(data[1]))
-        direction_data = (direction_data * (nSamples / 4) + direction) / ((nSamples / 4) + 1)
+        direction_data = direction_data + direction
 
-    neutral = direction_data
-    
+    neutral_dir = direction_data/(max_cnt)
+    direction_data = neutral_dir
+    rospy.loginfo("Set to "+str(neutral_dir))
+
+
     while not rospy.is_shutdown():
             # Read samples
             data = device.read(nSamples)
@@ -60,15 +64,17 @@ if __name__=="__main__":
             # bandpass also useful
             cocontract = np.std(data[0]-data[1])
             cocontract_data = (cocontract_data*(nSamples/4) + cocontract)/ ((nSamples/4)+1)
-
+            msg.data = cocontract_data
+            coco_data_pub.publish(msg)
             # sign of difference for direction
 
             direction = (np.std(data[0]) - np.std(data[1]))
             direction_data = (direction_data * (nSamples / 4) + direction) / ((nSamples / 4) + 1)
 
-            msg.data = direction_data
+            direction_data2 = direction_data - neutral_dir
+
+            msg.data = direction_data2
             dir_data_pub.publish(msg)
 
-            msg.data = cocontract_data
-            coco_data_pub.publish(msg)
+
 
