@@ -1,9 +1,14 @@
 #!/usr/bin/env python
+
+
+#!/usr/bin/env python
 from bitalino import BITalino
 import rospy
 from std_msgs.msg import Float32
 import numpy as np
-
+import socket
+import pickle as pkl
+import scipy
 global device
 
 
@@ -29,31 +34,48 @@ if __name__=="__main__":
     acqChannels = [2, 3]
     samplingRate = 1000
     nSamples = 50
-    device = BITalino(macAddress)
-    device.battery(batteryThreshold)
-    rospy.loginfo(device.version())
+    # device = BITalino(macAddress)
+    # device.battery(batteryThreshold)
+    # rospy.loginfo(device.version())
+    #
+    # device.start(samplingRate, acqChannels)
+    # msg = Float32()
+    # cocontract_data = 0
+    # direction_data = 0
+    # rospy.on_shutdown(clean_shutdown)
+    # rospy.loginfo("Finding neutral direction signal")
+    # max_cnt = 10
+    # for i in range(0, max_cnt):
+    #     # Read samples
+    #     data = device.read(nSamples)
+    #     # data = data[:]
+    #     data = np.transpose(data)
+    #     data = data[-2:]
+    #
+    #     direction = (np.std(data[0]) - np.std(data[1]))
+    #     direction_data = direction_data + direction
+    #
+    # neutral_dir = direction_data/(max_cnt)
+    # direction_data = neutral_dir
+    # rospy.loginfo("Set to "+str(neutral_dir))
 
-    device.start(samplingRate, acqChannels)
-    msg = Float32()
-    cocontract_data = 0
-    direction_data = 0
-    rospy.on_shutdown(clean_shutdown)
-    rospy.loginfo("Finding neutral direction signal")
-    max_cnt = 100
-    for i in range(0, max_cnt):
-        # Read samples
-        data = device.read(nSamples)
-        # data = data[:]
-        data = np.transpose(data)
-        data = data[-2:]
+    TCP_IP = '127.0.0.1'
+    TCP_PORT = 5005
+    BUFFER_SIZE = 1024  # Normally 1024, but we want fast response
 
-        direction = (np.std(data[0]) - np.std(data[1]))
-        direction_data = direction_data + direction
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((TCP_IP, TCP_PORT))
+    s.listen(1)
 
-    neutral_dir = direction_data/(max_cnt)
-    direction_data = neutral_dir
-    rospy.loginfo("Set to "+str(neutral_dir))
+    conn, addr = s.accept()
+    print 'Connection address:', addr
+    msg_data = dict()
+    while 1:
+        # data = conn.recv(BUFFER_SIZE)
+        msg_data = pkl.dumps([1, 2, 3, 4, 5, 6])
 
+        conn.send(msg_data)  # echo
+    conn.close()
 
     while not rospy.is_shutdown():
             # Read samples
